@@ -25,6 +25,8 @@ fi
 if [[ ! -f "$CHROOT_DIR/root/.initialized" ]]; then
     echo "[entrypoint] Création du chroot de base avec mkarchroot..."
     mkdir -p "$CHROOT_DIR"
+    # Clean up any partial previous run before retrying
+    [[ -d "$CHROOT_DIR/root" ]] && rm -rf "$CHROOT_DIR/root"
     mkarchroot "$CHROOT_DIR/root" base-devel
     touch "$CHROOT_DIR/root/.initialized"
     echo "[entrypoint] Chroot initialisé."
