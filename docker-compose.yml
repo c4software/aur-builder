@@ -1,0 +1,21 @@
+services:
+  builder:
+    build: ./builder
+    environment:
+      - AUR_PACKAGES=google-chrome jetbrains-toolbox onlyoffice-bin seafile-client-appimage slack-desktop
+    volumes:
+      - gpg-keys:/home/builder/.gnupg
+      - ./repo:/repo:rw
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./repo:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "9080:80"
+    restart: unless-stopped
+
+volumes:
+  gpg-keys:
