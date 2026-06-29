@@ -5,8 +5,8 @@ services:
     privileged: true
     volumes:
       - ./packages.conf:/etc/aur-packages:ro
-      - gpg-keys:/root/.gnupg
-      - chroot:/chroot
+      - ./gpg-keys:/root/.gnupg
+      - ./chroot:/chroot
       - ./repo:/repo
     restart: unless-stopped
 
@@ -18,7 +18,3 @@ services:
     ports:
       - "9080:80"
     restart: unless-stopped
-
-volumes:
-  gpg-keys:
-  chroot:
