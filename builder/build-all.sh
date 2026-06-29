@@ -6,9 +6,9 @@ CHROOT_DIR="/chroot"
 REPO_DIR="/repo"
 GPGKEY=$(cat /root/.gnupg/repo-key-id)
 
-# Mise à jour du chroot de base AVANT les builds (pas pendant : overlay actif)
+# Mise à jour du chroot de base AVANT les builds
 echo "[build] Mise à jour du chroot de base..."
-arch-chroot "$CHROOT_DIR/root" pacman -Syu --noconfirm
+arch-nspawn "$CHROOT_DIR/root" pacman -Syu --noconfirm
 
 gpg --armor --export "$GPGKEY" > "$REPO_DIR/custom-repo.pub"
 
@@ -42,29 +42,9 @@ while IFS= read -r pkg || [[ -n "$pkg" ]]; do
         continue
     fi
 
-    # Overlay isolé par paquet : tmpfs pour upper/work (évite overlay-sur-overlay)
-    tmpfs_dir="/run/build-${pkg}-$$"
-    mkdir -p "$tmpfs_dir"
-    mount -t tmpfs -o size=8G tmpfs "$tmpfs_dir"
+    if (cd "$build_dir" && makechrootpkg -c -r "$CHROOT_DIR" -- -s --noconfirm); then
 
-    upper="$tmpfs_dir/upper"
-    work="$tmpfs_dir/work"
-    merged="$tmpfs_dir/merged"
-    mkdir -p "$upper" "$work" "$merged"
-
-    mount -t overlay overlay \
-        -o "lowerdir=$CHROOT_DIR/root,upperdir=$upper,workdir=$work" \
-        "$merged"
-
-    # Copie le PKGBUILD dans l'overlay et donne les droits au builder
-    mkdir -p "$merged/pkgbuild"
-    cp -r "$build_dir/." "$merged/pkgbuild/"
-    arch-chroot "$merged" chown -R builder:builder /pkgbuild
-
-    if arch-chroot "$merged" \
-        su builder -s /bin/bash -c "cd /pkgbuild && makepkg -s --noconfirm"; then
-
-        for pkg_file in "$upper/pkgbuild/"*.pkg.tar.zst; do
+        for pkg_file in "$build_dir/"*.pkg.tar.zst; do
             [[ -f "$pkg_file" ]] || continue
             basename=$(basename "$pkg_file")
 
@@ -84,9 +64,7 @@ while IFS= read -r pkg || [[ -n "$pkg" ]]; do
         failed+=("$pkg")
     fi
 
-    umount "$merged"
-    umount "$tmpfs_dir"
-    rm -rf "$tmpfs_dir" "$build_dir"
+    rm -rf "$build_dir"
 done < "$PACKAGES_FILE"
 
 if [[ ${#failed[@]} -gt 0 ]]; then

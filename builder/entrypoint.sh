@@ -11,8 +11,8 @@ if [[ ! -f "$GPG_KEY_ID_FILE" ]]; then
     gpg --batch --gen-key <<EOF
 Key-Type: RSA
 Key-Length: 4096
-Name-Real: Custom Arch Repo
-Name-Email: repo@local
+Name-Real: Valentin Brosseau - Custom Arch Repository
+Name-Email: admin@arch.local
 Expire-Date: 0
 %no-protection
 %commit
@@ -23,26 +23,9 @@ fi
 
 # Init chroot de base (persisted dans un volume)
 if [[ ! -f "$CHROOT_DIR/root/.initialized" ]]; then
-    echo "[entrypoint] Création du chroot de base avec pacstrap..."
-    mkdir -p "$CHROOT_DIR/root"
-
-    # pacstrap sans unshare (systemd-nspawn ne fonctionne pas dans Docker)
-    pacstrap "$CHROOT_DIR/root" base-devel sudo
-
-    # pacstrap moderne ne copie pas pacman.conf — on le fait manuellement
-    if [[ ! -f "$CHROOT_DIR/root/etc/pacman.conf" ]]; then
-        cp /etc/pacman.conf "$CHROOT_DIR/root/etc/pacman.conf"
-    fi
-
-    # locale-gen via arch-chroot (pas systemd-nspawn)
-    printf 'en_US.UTF-8 UTF-8\n' > "$CHROOT_DIR/root/etc/locale.gen"
-    arch-chroot "$CHROOT_DIR/root" locale-gen
-
-    # Utilisateur non-root pour makepkg (qui refuse de tourner en root)
-    arch-chroot "$CHROOT_DIR/root" useradd -m builder
-    echo 'builder ALL=(ALL) NOPASSWD: /usr/bin/pacman' \
-        >> "$CHROOT_DIR/root/etc/sudoers"
-
+    echo "[entrypoint] Création du chroot de base avec mkarchroot..."
+    mkdir -p "$CHROOT_DIR"
+    mkarchroot "$CHROOT_DIR/root" base-devel
     touch "$CHROOT_DIR/root/.initialized"
     echo "[entrypoint] Chroot initialisé."
 fi
