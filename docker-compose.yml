@@ -1,5 +1,5 @@
 services:
-  builder:
+  aur_builder:
     build: ./builder
     # Nécessaire pour que makechrootpkg puisse monter l'overlayfs du chroot
     privileged: true
@@ -10,7 +10,7 @@ services:
       - ./repo:/repo
     restart: unless-stopped
 
-  nginx:
+  aur_server:
     image: nginx:alpine
     volumes:
       - ./repo:/usr/share/nginx/html:ro
