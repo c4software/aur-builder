@@ -1,18 +1,10 @@
 FROM archlinux:latest
 
 RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm base-devel git curl gnupg cronie sudo && \
+    pacman -S --noconfirm arch-install-scripts gnupg cronie git sudo && \
     pacman -Sc --noconfirm
 
-RUN useradd -m -G wheel builder && \
-    echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+COPY entrypoint.sh build-all.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/build-all.sh
 
-RUN sed -i 's/^BUILDENV=.*/BUILDENV=(!distcc color !ccache check sign)/' /etc/makepkg.conf
-
-COPY build.sh entrypoint.sh /home/builder/
-RUN chmod +x /home/builder/build.sh /home/builder/entrypoint.sh && \
-    chown builder:builder /home/builder/build.sh /home/builder/entrypoint.sh
-
-USER builder
-
-ENTRYPOINT ["/home/builder/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

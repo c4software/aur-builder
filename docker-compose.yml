@@ -1,11 +1,13 @@
 services:
   builder:
     build: ./builder
-    environment:
-      - AUR_PACKAGES=google-chrome jetbrains-toolbox onlyoffice-bin seafile-client-appimage slack-desktop
+    # Nécessaire pour que makechrootpkg puisse monter l'overlayfs du chroot
+    privileged: true
     volumes:
-      - gpg-keys:/home/builder/.gnupg
-      - ./repo:/repo:rw
+      - ./packages.conf:/etc/aur-packages:ro
+      - gpg-keys:/root/.gnupg
+      - chroot:/chroot
+      - ./repo:/repo
     restart: unless-stopped
 
   nginx:
@@ -19,3 +21,4 @@ services:
 
 volumes:
   gpg-keys:
+  chroot:
